@@ -3,15 +3,16 @@ const db = require(`${__dirname}/db.js`);
 const bcrypt = require('bcrypt');
 
 // Error Handler
-exports.errorHandler = (error) => {
+exports.errorHandler = (error, next) => {
     if (error) {
         console.log(error);
         throw error;
     }
     return;
+    next();
 }
 // Checks if Data is Empty (Returns Boolean)
-exports.isEmpty = (req, res) => {
+exports.isEmpty = (req, res, next) => {
     //verify that email, username, and password are not empty
     console.log(req.body);
     if (req.body.email === "" || req.body.username === "" || req.body.password === "") {
@@ -23,10 +24,10 @@ exports.isEmpty = (req, res) => {
     }else {
         return false;
     }
-            
+    next();
 }
 // Checks if Email (Returns Boolean)
-exports.isEmail = (req, res) => {
+exports.isEmail = (req, res, next) => {
     //verify that email is valid
     if (!req.body.email.includes("@") || !req.body.email.includes(".")) {
         return false
@@ -37,9 +38,10 @@ exports.isEmail = (req, res) => {
     }else {
         return false;
     }
+    next();
 }
 // Checks if Username Exists (Returns Boolean)
-exports.usernameTaken = (req, res, err, row) => {
+exports.usernameTaken = (req, res, err, row, next) => {
     //verify that username is not already in use
     db.get("SELECT * FROM users WHERE username = ?", [req.body.username], (err, row) => {
         if (row) {
@@ -52,9 +54,10 @@ exports.usernameTaken = (req, res, err, row) => {
             return false;
         }
     })
+    next();
 }
 // Checks if Password is Length Valid(Returns Boolean)
-exports.isLengthValid = (req, res) => {
+exports.isLengthValid = (req, res, next) => {
     //verify that password is at least 8 characters long
     if (req.body.password.length < 8) {
         return false;
@@ -65,9 +68,10 @@ exports.isLengthValid = (req, res) => {
     }else {
         return true;
     }
+    next();
 }
 // Checks if Password Contains At Least One Number, Letter & Lowercase Letter(Returns Boolean)
-exports.isPasswordSecure = (req, res) => {
+exports.isPasswordSecure = (req, res, next) => {
     //verify that password is at least one number, one uppercase letter, and one lowercase letter
     if (!req.body.password.match(/[a-z]/i) || !req.body.password.match(/[A-Z]/i) || !req.body.password.match(/[0-9]/i)) {
         return false;
@@ -78,9 +82,10 @@ exports.isPasswordSecure = (req, res) => {
     }else {
         return true;
     }
+    next();
 }
 // Checks if Email is Taken(Returns Boolean)
-exports.isEmailTaken = (req, res, err, row) => {
+exports.isEmailTaken = (req, res, err, row, next) => {
     //verify that email is not already in use
     db.get("SELECT * FROM users WHERE email = ?", [req.body.email], async (err, row) => {
         if (row) {
@@ -92,12 +97,14 @@ exports.isEmailTaken = (req, res, err, row) => {
         }else {
             return false;
         }
-    });
+    })
+    next();
 }
 //Insert New User into Database
-exports.insertUser = (salt, hashedPassword, db, bcrypt, errorHandler) => {
+exports.insertUser = (salt, hashedPassword, db, bcrypt, errorHandler, next) => {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
     db.run("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", [req.body.username, hashedPassword, req.body.email], errorHandler);
-    res.json({type: "success", message: "Account created successfully."});
+    res.json({type: "success", message: "Account created successfully."})
+    next();
 }

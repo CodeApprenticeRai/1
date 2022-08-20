@@ -29,8 +29,12 @@ app.get('/', (req, res) => {
 });
 
 
-app.post('/sign_up', jsonParser, (req, res) => {
-
+app.post('/sign_up', jsonParser, (req, res, email, username, password) => {
+  // Get Data
+  const {email, username, password} = req.body;
+  // Validate
+  username.validation.isEmpty()
+    .validation.isEmail()
 })
 
 
