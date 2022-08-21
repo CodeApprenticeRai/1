@@ -8,9 +8,10 @@ import {
 
 import './index.css';
 import App from './App';
-import CoverPage from './components/CoverPage';
+// import CoverPage from './components/CoverPage';
 import SignUp from './components/SignUp';
-import LogIn from './components/LogIn';
+import LogIn from './components/Login/LogIn';
+import ProtectHome from './components/Home';
 
 import reportWebVitals from './reportWebVitals';
 
@@ -21,11 +22,11 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} >
-          <Route path="/" element={<CoverPage />} />
+          <Route path="/" element={<ProtectHome />} />
           <Route path="/sign_up" element={<SignUp />} />
           <Route path="/login" element={<LogIn />} />
-
         </Route>
+        <Route path="*" element={<div>404 Not Found.</div>} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

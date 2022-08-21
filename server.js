@@ -1,14 +1,26 @@
 var sqlite3 = require('sqlite3').verbose();
 const express = require('express');
 const app = express();
+const session = require('express-session');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require("path");
 const bcrypt = require('bcrypt');
+const store = new session.MemoryStore();
 
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
+var secret = "WAWABUWI";
+
+app.use(session({
+    "secret": secret,
+    cookie: { maxAge: 30000 },
+    saveUninitialized: false,
+    "store": store
+}));
+
+  app.use(jsonParser);
 app.use(cors());
 
 // app.use(express.static(path.join(__dirname, "..", "build")));
@@ -24,7 +36,7 @@ function errorHandler(error) {
     return;
   }
 
-var db = new sqlite3.Database('./data/main.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, errorHandler);
+const db = new sqlite3.Database('./data/main.db', sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, errorHandler);
 // db.exec("DROP TABLE IF EXISTS users", errorHandler);
 db.exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT, email TEXT)", errorHandler);
 
@@ -36,7 +48,6 @@ app.get('/', (req, res) => {
 
 app.post('/sign_up', jsonParser, (req, res) => {
   //verify that email, username, and password are not empty
-  console.log(req.body);
   if (req.body.email === "" || req.body.username === "" || req.body.password === "") {
     res.json({
       type: "error", 
@@ -84,6 +95,7 @@ app.post('/sign_up', jsonParser, (req, res) => {
                   const salt = await bcrypt.genSalt();
                   const hashedPassword = await bcrypt.hash(req.body.password, salt);
                   db.run("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", [req.body.username, hashedPassword, req.body.email], errorHandler);
+                  console.log("User successfully created");
                   res.json({type: "success", message: "Account created successfully."});
                 }
               }
@@ -99,14 +111,51 @@ app.post('/sign_up', jsonParser, (req, res) => {
 
 
 app.post('/login', (req, res) => {
-    // console.log(req)
-    // console.log(res)
-    var username = req.body.username;
-    var password = req.body.password;
-    var email = req.body.email;
-    // var sql = "INSERT INTO users (username, password, email) VALUES ('" + username + "', '" + password + "', '" + email + "')";
-    // db.run(sql, errorHandler);
-    res.send("Success");
+  console.log("Request Body: ", req.body);  
+  if (!req.body.hasOwnProperty("username") || !req.body.hasOwnProperty("password")) {
+    res.json({
+      type: "error", 
+      message: "Username and Password are required."
+    });
+  }
+
+  let username = req.body.username;
+  let password = req.body.password;
+  
+  if (req.session.authenticated){
+    res.json(session);
+  } else {
+    db.get("SELECT * FROM users WHERE username = ?", [username], (errorOnSelect, row) => {
+      console.log("QueryResult: ", errorOnSelect, row);
+      if (row) {
+        bcrypt.compare(password, row.password, (errorOnCompare, result) => {
+            console.log("result: ", result);
+            if (result) {
+              req.session.authenticated = true
+              req.session.username = username;
+              res.json({
+                  type: "success", 
+                  message: "Login successful",
+                  "username": username,
+                  "session": req.session
+              });
+            } else {
+                res.json({
+                    type: "error", 
+                    message: "Incorrect password",
+                    error: errorOnCompare
+                });
+            }
+        });
+        } else {
+            res.json({
+                type: "error", 
+                message: "Username not found",
+                error: errorOnSelect
+            });
+        }
+    })  
+  }
 })
 
 
