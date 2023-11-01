@@ -8,6 +8,22 @@ const path = require("path");
 const bcrypt = require('bcrypt');
 const store = new session.MemoryStore();
 
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require('socket.io');
+const io = new Server(server);
+
+
+io.on('connection', (socket) => {
+  socket.emit('chat-message', 'connection successful');
+  console.log("connection established");
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+});
+
+
+
 var jsonParser = bodyParser.json();
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
@@ -20,7 +36,7 @@ app.use(session({
     "store": store
 }));
 
-  app.use(jsonParser);
+app.use(jsonParser);
 app.use(cors());
 
 // app.use(express.static(path.join(__dirname, "..", "build")));
@@ -45,6 +61,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+
+app.get('/script.js', (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "script.js"));
+});
 
 app.post('/sign_up', jsonParser, (req, res) => {
   //verify that email, username, and password are not empty
@@ -126,7 +146,6 @@ app.post('/login', (req, res) => {
     res.json(session);
   } else {
     db.get("SELECT * FROM users WHERE username = ?", [username], (errorOnSelect, row) => {
-      console.log("QueryResult: ", errorOnSelect, row);
       if (row) {
         bcrypt.compare(password, row.password, (errorOnCompare, result) => {
             console.log("result: ", result);
@@ -159,4 +178,4 @@ app.post('/login', (req, res) => {
 })
 
 
-app.listen(port, () => console.log(`Express app listening on port ${port}!`));
+server.listen(port, () => console.log(`Express app listening on port ${port}!`));

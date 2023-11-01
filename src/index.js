@@ -11,9 +11,11 @@ import App from './App';
 // import CoverPage from './components/CoverPage';
 import SignUp from './components/SignUp';
 import LogIn from './components/Login/LogIn';
+import Chat from './components/Chat';
 import ProtectHome from './components/Home';
 
 import reportWebVitals from './reportWebVitals';
+import { RequireAuth } from './components/RequireAuth';
 
 const root = ReactDOM.createRoot(document.body);
 
@@ -23,6 +25,7 @@ root.render(
       <Routes>
         <Route path="/" element={<App />} >
           <Route path="/" element={<ProtectHome />} />
+          <Route path="/chat" element={<RequireAuth><Chat /></RequireAuth>} />
           <Route path="/sign_up" element={<SignUp />} />
           <Route path="/login" element={<LogIn />} />
         </Route>

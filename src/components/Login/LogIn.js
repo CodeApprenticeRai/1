@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-
+import { useAuth } from '../AuthProvider';
 import './Login.css';
 
 // const login_post_url = "http://localhost:3001/login";
 
 export default function Login(){
+    const auth = useAuth();
     const [usernameUserInput, setusernameUserInput] =  useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const location = useLocation();
+
+    const redirectPath = location.state?.path || "/";
 
     function handleSubmit(event){
         event.preventDefault();
@@ -18,7 +21,7 @@ export default function Login(){
             "username": usernameUserInput,
             password: password,
         };
-        console.log(data);
+        // console.log(data);
         fetch('http://localhost:3001/login', {
             method: 'POST',
             headers: {
@@ -28,12 +31,13 @@ export default function Login(){
         })
         .then(res => res.json())
         .then(data => {
-            console.log("Returned backend data from login: ", data);
+            // console.log("Returned backend data from login: ", data);
             if (data.type === "error") {
                 setError(data.message);
             }
             if (data.type === "success") {
-                navigate("/", { state: { "username": usernameUserInput, success: data.message } }); 
+                auth.login(data.username);
+                navigate(redirectPath, { state: { "username": usernameUserInput, success: data.message }, replace: true }); 
             }
         })
     }
